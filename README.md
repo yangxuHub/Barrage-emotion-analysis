@@ -217,4 +217,5 @@ if __name__ == '__main__':
     data.to_csv(os.path.join(path, "pre_sample.tsv"),sep = '\t')
     #print(data)
 ```
-得到最终预测结果
+## 4.3 pf1.py评价
+根据传入的文件true_label和predict_label来求模型预测的精度、召回率和F1值，另外给出微观和宏观取值。得到最终预测结果
