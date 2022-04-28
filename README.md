@@ -1,8 +1,8 @@
-# CSDN 博客地址
-https://blog.csdn.net/qq874455953/article/details/90276116
-@[toc]
-# 0. BERT介绍
-google 在**2018年放出的大杀器**， 作为当前NLP的最新技术，此模型在**NLP的多个上游下游问题上都取得很好的成绩，刷新记录**， 具体原理可以自行google， 这样一个新的技术， **值得我们学习一下， 下面我将给出一个使用BERT进行情感分类预测及代码实例， 供大家分享学习。**
+# 任务介绍
+近几年视频媒体和直播行业的迅猛发展，使弹幕成为一种新潮的评论形式。用户观看视频的同时发表自己的想法和意见，并实时叠加在对应的视频页面上。弹幕技术冲击着传统主流媒体，让视频更加地趋于社交化，利用自然语言处理的相关技术对弹幕进行情感分析，在推荐系统、影视评分、热点管控以及节目优化等方面有极大的利用价值。而弹幕文本本身存在话题发散性、碎片化、对象多元化和语法的不完整性，要对这一特殊数据的情感进行研究，有一定的挑战空间。
+BERT是一种预训练语言表示的方法，它优于传统的模型，是第一个用于预训练NLP的无监督，深度双向系统，此模型在NLP的多个上游下游问题上都取得很好的成绩。因此，本文将BERT预训练模型应用在弹幕数据的研究任务中，尝试提升文本情感分类的精准率。主要研究内容如下：
+（1）从哔哩哔哩平台热门综艺视频爬取弹幕数据，提取用户、时间和文本等信息，进行去重、降噪、人工情感标注等数据预处理，处理成标准公开数据集。
+（2）划分数据集，对比使用多个机器学习模型和BERT模型进行一个情感二分类任务的训练，使用测试集进行测试，通过对比F1值和召回率、精准率等指标衡量最优的分类模型。
 
 # 1. BERT配置
 要求配置如下, tensorflow版本不能太低。
@@ -21,19 +21,11 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 ```
 
-
-## 1.1. clone BERT 代码
-首先clone 官方代码，地址如下
-```
-https://github.com/google-research/bert.git
-```
-之后我们**主要专注于run_classifier.py**， 因为这个py文件是BERT的分类任务接口， **接下来我们主要就是对这个文件进行修改， 然后运行即可**。 同理 其他任务则运行其他文件，例如问答训练是run_squad.py等
-
-## 1.2. 数据处理
+## 1 数据处理
 我们一共需要两种数据
 - 数据是BERT开放的预训练模型
-- 我们的数据集
-### 1.2.1预训练模型
+- 我们的数据集, 通过在bilibili平台综艺视频的爬虫获取，经过分词、去重、去停用词等预处理得到。
+### 1.2 预训练模型
 这是google花费大量**资源训练出来的预训练模型**， 我的数据集是英文句子， 所以我们使用 **BERT-base，uncased** 
 也就是基础版本+有大小写版本， 当然如果你用中文，google也提供了相应的数据集
 
@@ -49,45 +41,17 @@ https://github.com/google-research/bert.git
 #### 训练集
 训练集中，每一行代表一条训练语句，包括四部分内容，使用'\t'分隔符：
 
-```
-ID1 ID2 polarity text
-```
-其中ID1和ID2是爬取句子内容的定位信息，同学们无需使用。text是句子内容，polarity是句子对应情感类型，有positive、negative、neutral三种。
-
 #### 测试集
 测试集中，每一行代表一条待预测语句，包括四部分内容，使用'\t'分隔符：
-```
-NA line_num unknwn text
-```
 
-**以上是我得到的数据集， 但是我们需要从训练集里面挑10%作为开发集**
+**需要从训练集里面挑10%作为开发集**
 
 #### 开发集
-开发集是由训练集得到的，我们使用pandas得到开发集， 代码如下, 开发集和训练集比例为9:1， **两个数据集数据不重合**， 我们运行以下代码，得到**训练集和开发集**, 测试集不用重新划分， 用现成的即可
+开发集是由训练集得到的，我们使用pandas得到开发集， 代码如下, 开发集和训练集比例为9:1
 
-**``data_cut_off.py``**
-```py
-import os
-import pandas as pd
-from sklearn.utils import shuffle
-
-
-if __name__ == '__main__':
-    path = "glue/"
-    pd_all = pd.read_csv(os.path.join(path, "data.tsv"), sep='\t' )
-    pd_all = shuffle(pd_all)
-
-
-    dev_set = pd_all.iloc[0:int(pd_all.shape[0]/10)]
-    train_set = pd_all.iloc[int(pd_all.shape[0]/10): int(pd_all.shape[0])]
-    dev_set.to_csv("glue/dev.tsv", index=False, sep='\t')
-    train_set.to_csv("glue/train.tsv", index=False, sep='\t')
-
-```
 
 这样我们就得到我们的数据集合。
 
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20190519001629926.png)
 
 
 # 2. 修改代码
@@ -254,56 +218,3 @@ if __name__ == '__main__':
     #print(data)
 ```
 得到最终预测结果
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20190519002613668.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxODc0NDU1OTUz,size_16,color_FFFFFF,t_70)
-
-
-# 5. 运行问题
-
-## 5.1 出现内存不够
-
-官方解释影响内存大小的参数
-The factors that affect memory usage are:
-
-- **`max_seq_length`**: The released models were trained with sequence lengths
-  up to 512, but you can fine-tune with a shorter max sequence length to save
-  substantial memory. This is controlled by the `max_seq_length` flag in our
-  example code.
-- **`train_batch_size`**: The memory usage is also directly proportional to
-  the batch size.
-- **Model type, `BERT-Base` vs. `BERT-Large`**: The `BERT-Large` model
-  requires significantly more memory than `BERT-Base`.
-- **Optimizer**: The default optimizer for BERT is Adam, which requires a lot
-  of extra memory to store the `m` and `v` vectors. Switching to a more memory
-  efficient optimizer can reduce memory usage, but can also affect the
-  results. We have not experimented with other optimizers for fine-tuning.
-
-Using the default training scripts (`run_classifier.py` and `run_squad.py`), we
-benchmarked the maximum batch size on single Titan X GPU (12GB RAM) with
-TensorFlow 1.11.0:
-
-| System       | Seq Length | Max Batch Size |
-| ------------ | ---------- | -------------- |
-| `BERT-Base`  | 64         | 64             |
-| ...          | 128        | 32             |
-| ...          | 256        | 16             |
-| ...          | 320        | 14             |
-| ...          | 384        | 12             |
-| ...          | 512        | 6              |
-| `BERT-Large` | 64         | 12             |
-| ...          | 128        | 6              |
-| ...          | 256        | 2              |
-| ...          | 320        | 1              |
-| ...          | 384        | 0              |
-| ...          | 512        | 0              |
-
-- 对于参数max_seq_length， train_batch_size 越小， 内存使用越小
-- 对于使用的预训练集 BERT-Base  使用内存比 BERT-Large小
-- 使用不同的优化器也会造成一定的影响
-
-作者给出了一些他使用的12g显存的搭配， 可以参考使用
-
-
-# 6. 源码 GITHUB 地址
-特意直接开放源码， 供大家参考
-
-https://github.com/wangjiwu/BERT-emotion-classification
